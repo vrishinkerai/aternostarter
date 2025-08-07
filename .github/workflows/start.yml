@@ -1,71 +1,15 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: start-script-config
-data:
-  start.py: |
-    # Your python script contents here
-    # For example purposes, you can paste the contents of your start.py here
+name: Aternos Starter
 
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: aternos-starter
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: aternos-starter
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
-  template:
-    metadata:
-      labels:
-        app: aternos-starter
-    spec:
-      containers:
-        - name: python-starter
-          image: python:3.11-slim
-          command: ["python", "/app/start.py"]
-          volumeMounts:
-            - name: start-script
-              mountPath: /app/start.py
-              subPath: start.py
-          resources:
-            limits:
-              memory: "256Mi"
-              cpu: "500m"
-            requests:
-              memory: "128Mi"
-              cpu: "250m"
-          readinessProbe:
-            exec:
-              command: ["python", "-c", "import sys; sys.exit(0)"]  # Customize for actual readiness check
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            exec:
-              command: ["python", "-c", "import sys; sys.exit(0)"]  # Customize for actual liveness check
-            initialDelaySeconds: 15
-            periodSeconds: 20
-      volumes:
-        - name: start-script
-          configMap:
-            name: start-script-config
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: aternos-starter-service
-spec:
-  selector:
-    app: aternos-starter
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8080
-  type: ClusterIP
+on:
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install aternos
+      - run: python start.py
